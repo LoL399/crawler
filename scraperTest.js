@@ -3,11 +3,15 @@ const cheerio = require("cheerio");
 const {categories} = require("./db/repositories/index")
 const axios = require("axios").default;
 const port = process.env.PORT || 7000;
-
+fs = require('fs');
 const app = express();
 const fethHtml = async (url) => {
   try {
     const { data } = await axios.get(url);
+    fs.writeFile('helloworld.txt', data, function (err) {
+      if (err) return console.log(err);
+      console.log('Hello World > helloworld.txt');
+    });
     return data;
   } catch {
     console.error(
@@ -124,31 +128,39 @@ const scrapCategory = async (objectWebsite) => {
 }
 
 
+<<<<<<< HEAD
 const scrapSteam = async (objectWebsite) => {
   
+=======
+const scrapSteam = async () => {
+  const objectWebsite = "https://www.rottentomatoes.com/browse/in-theaters";
+>>>>>>> 48e9c95ebd0155596339434a205b3356504d7ea6
 
   const html = await fethHtml(objectWebsite);
 
   const selector = cheerio.load(html);
 
   const searchResults = selector("body").find(
-    ".wrapper > #content > div[class='main-content mt-10'] > .container > .panel-vod > div[class='list-vod row category-tabs-item'] > div[class='item col-lg-2 col-md-3 col-sm-4 col-6'] "
-  );
+    "div[class='body_main container'] > div[id='main_container'] > div[id='main-row'] > div[id='content-column'] > nav[class='topbar-container hidden-xs'] > ul > li[id='genre-dropdown'] > div[class='dropdown-menu options'] > div[class='genres'] > div[class='genre']"
+  )
+
+  // console.log(searchResults.length)
 
 
   const deals = searchResults
     .map((idx, el) => {
       const elementSelector = selector(el);
-      const pageLink = elementSelector.find("a").attr("href");
-      const rating = elementSelector
-        .find("div[class='func row'] > div[class='col-md-6 pl-0']> div")
-        .attr("data-rateit-value");
+      const pageLink = elementSelector.find("input").attr('data-genre');
+      console.log(pageLink)
+      // const rating = elementSelector
+      //   .find("div[class='func row'] > div[class='col-md-6 pl-0']> div")
+      //   .attr("data-rateit-value");
       // console.log(rating)
-      extractDeal(pageLink, rating);
+      // extractDeal(pageLink, rating);
     })
     .get();
 
-  return deals;
+  // return deals;
 };
 
 const rottenTomatoGet = async () => {
@@ -176,9 +188,13 @@ const rottenTomatoGet = async () => {
 
 app.listen(port, async () => {
   console.log(`Server is running on port: ${port}`);
+<<<<<<< HEAD
   const result = await rottenTomatoGet()
   //const objectWebsite = "https://247phim.com/phim/phim-le/nam/2021";
   // const result = await scrapSteam(objectWebsite);
   // let result = await scrapCategory(objectWebsite)
+=======
+  // const result = await scrapSteam();
+>>>>>>> 48e9c95ebd0155596339434a205b3356504d7ea6
   // console.log(result);
 });
