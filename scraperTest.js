@@ -7,6 +7,10 @@ const app = express();
 const fethHtml = async (url) => {
   try {
     const { data } = await axios.get(url);
+    fs.writeFile('helloworld.txt', data, function (err) {
+      if (err) return console.log(err);
+      console.log('Hello World > helloworld.txt');
+    });
     return data;
   } catch {
     console.error(
@@ -79,30 +83,30 @@ const extractDeal = async (objectWebsite, rating) => {
 
 
 const scrapSteam = async () => {
-  const objectWebsite = "https://www.rottentomatoes.com/m/above_suspicion_2021";
+  const objectWebsite = "https://www.rottentomatoes.com/browse/in-theaters";
 
   const html = await fethHtml(objectWebsite);
 
   const selector = cheerio.load(html);
 
   const searchResults = selector("body").find(
-    "div[class='body_main container'] > div[id='main_container'] > section[class='mob-body mob-body--no-hero-image'] > div[id='mainColumn'] > div[id='topSection'] > score-board > h1"
+    "div[class='body_main container'] > div[id='main_container'] > div[id='main-row'] > div[id='content-column'] > nav[class='topbar-container hidden-xs'] > ul > li[id='genre-dropdown'] > div[class='dropdown-menu options'] > div[class='genres'] > div[class='genre']"
   )
 
-  console.log(searchResults.text().trim())
+  // console.log(searchResults.length)
 
-  // const deals = searchResults
-  //   .map((idx, el) => {
-  //     const elementSelector = selector(el);
-  //     const pageLink = elementSelector.find("div[class='poster_container'] > a").attr("href");
-  //     console.log(pageLink)
-  //     // const rating = elementSelector
-  //     //   .find("div[class='func row'] > div[class='col-md-6 pl-0']> div")
-  //     //   .attr("data-rateit-value");
-  //     // console.log(rating)
-  //     extractDeal(pageLink, rating);
-  //   })
-  //   .get();
+  const deals = searchResults
+    .map((idx, el) => {
+      const elementSelector = selector(el);
+      const pageLink = elementSelector.find("input").attr('data-genre');
+      console.log(pageLink)
+      // const rating = elementSelector
+      //   .find("div[class='func row'] > div[class='col-md-6 pl-0']> div")
+      //   .attr("data-rateit-value");
+      // console.log(rating)
+      // extractDeal(pageLink, rating);
+    })
+    .get();
 
   // return deals;
 };
