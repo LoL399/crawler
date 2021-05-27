@@ -2,7 +2,7 @@ const express = require("express");
 const cheerio = require("cheerio");
 const axios = require("axios").default;
 const port = process.env.PORT || 7000;
-
+fs = require('fs');
 const app = express();
 const fethHtml = async (url) => {
   try {
@@ -79,33 +79,36 @@ const extractDeal = async (objectWebsite, rating) => {
 
 
 const scrapSteam = async () => {
-  const objectWebsite = "https://247phim.com/phim/phim-le/nam/2021";
+  const objectWebsite = "https://www.rottentomatoes.com/m/above_suspicion_2021";
 
   const html = await fethHtml(objectWebsite);
 
   const selector = cheerio.load(html);
 
   const searchResults = selector("body").find(
-    ".wrapper > #content > div[class='main-content mt-10'] > .container > .panel-vod > div[class='list-vod row category-tabs-item'] > div[class='item col-lg-2 col-md-3 col-sm-4 col-6'] "
-  );
+    "div[class='body_main container'] > div[id='main_container'] > section[class='mob-body mob-body--no-hero-image'] > div[id='mainColumn'] > div[id='topSection'] > score-board > h1"
+  )
 
-  const deals = searchResults
-    .map((idx, el) => {
-      const elementSelector = selector(el);
-      const pageLink = elementSelector.find("a").attr("href");
-      const rating = elementSelector
-        .find("div[class='func row'] > div[class='col-md-6 pl-0']> div")
-        .attr("data-rateit-value");
-      // console.log(rating)
-      extractDeal(pageLink, rating);
-    })
-    .get();
+  console.log(searchResults.text().trim())
 
-  return deals;
+  // const deals = searchResults
+  //   .map((idx, el) => {
+  //     const elementSelector = selector(el);
+  //     const pageLink = elementSelector.find("div[class='poster_container'] > a").attr("href");
+  //     console.log(pageLink)
+  //     // const rating = elementSelector
+  //     //   .find("div[class='func row'] > div[class='col-md-6 pl-0']> div")
+  //     //   .attr("data-rateit-value");
+  //     // console.log(rating)
+  //     extractDeal(pageLink, rating);
+  //   })
+  //   .get();
+
+  // return deals;
 };
 
 app.listen(port, async () => {
   console.log(`Server is running on port: ${port}`);
   const result = await scrapSteam();
-  console.log(result);
+  // console.log(result);
 });
