@@ -1,5 +1,6 @@
 const express = require("express");
 const cheerio = require("cheerio");
+const {categories} = require("./db/repositories/index")
 const axios = require("axios").default;
 const port = process.env.PORT || 7000;
 
@@ -14,6 +15,25 @@ const fethHtml = async (url) => {
     );
   }
 };
+
+
+const getCategories = async (array) =>{
+  let genresArr = []
+  for(let item of array)
+  {
+    let category = await categories.getByParams({name: item.trim()})
+    // console.log(category)
+    if(typeof category !== 'undefined' && category.length > 0)
+    {
+      // console.log(category[0].id)
+      genresArr.push(category[0].id)
+
+    }
+
+
+  }
+  return genresArr;
+}
 
 const extractDeal = async (objectWebsite, rating) => {
   const html = await fethHtml(objectWebsite);
@@ -32,54 +52,80 @@ const extractDeal = async (objectWebsite, rating) => {
     )
     .text()
     .trim();
+  
+    const img = selector("body")
+    .find(
+      ".wrapper > #content > div[class='player-section'] > .container > div[class='row mt-3'] > div[class='col-md-4 col-12'] > .item > .img-4-6 > .inline > img "
+    )
+    .attr('src')
+    .trim();
 
-  // const getTitle = selector.find('a').attr('href')
-  // const link = selector
-  //   .find("a")
-  //   .find("h3")
-  //   .text()
-  //   .trim();
+    let userScore = Math.round((rating * 2 + (Math.random() * (3 + 3) -3))* 10) / 10
+    userScore > 10 ? userScore = 10 : userScore < 0 ? userScore = 1 : userScore = userScore;
 
-  // const image = selector.find("a > div[class='img-4-6'] > div[class='inline'] > img").attr('src')
+    const genresString = selector("body")
+    .find(
+      ".wrapper > #content > div[class='player-section'] > .container > div[class='row mt-3'] > div[class='col-md-8 col-12 detail-vod-left'] > .detail > div[class='row mt-4'] > div[class='col-md-6 col-12'] > ul > li "
+    )
+    let genresArr = []
+      for (const el of genresString){
+      const elementSelector = selector(el).find("span");
+      // console.log(elementSelector.text())
+      if(elementSelector.text().trim()=="Thể loại:")
+      {
+        elementSelector.remove()
+        let array = selector(el).text().trim().replace(/\s+/g, ' ').split(',')
+        let getValue = await getCategories(array);
+        genresArr = getValue
+      }
 
-  // const onScreenDate = 2021
+    }
+    
+    
+  // let category = await categories.getByParams({name: 'Gameshow'})
 
-  // const releaseDate = selector
-  //   .find(".responsive_search_name_combined")
-  //   .find("div[class='col search_released responsive_secondrow']")
-  //   .text()
-  //   .trim();
+  // discountedPrice = matched[matched.length - 1];
 
-  // const link = selector.attr("href").trim();
-
-  // const priceSelector = selector
-  //   .find("div[class='col search_price_discount_combined responsive_secondrow']")
-  //   .find("div[class='col search_price discounted responsive_secondrow']");
-
-  // const originalPrice = priceSelector
-  //   .find("span > strike")
-  //   .text()
-  //   .trim();
-
-  // const pricesHtml = priceSelector.html().trim();
-  // const matched = pricesHtml.match(/(<br>(.+\s[0-9].+.\d+))/);
-
-  //   const discountedPrice = matched[matched.length - 1];
-
-  console.log({ name, rating,summary });
-
-  // return {
-  //   searchResults,
-  //   // releaseDate,
-  //   // originalPrice,
-  //   // // discountedPrice,
-  //   // link
-  // };
+  console.log({ name, 
+    lemon_score: rating*2,
+    summary,
+     user_score: userScore,
+     genres: genresArr,
+      img});
 };
 
 
-const scrapSteam = async () => {
-  const objectWebsite = "https://247phim.com/phim/phim-le/nam/2021";
+const scrapCategory = async (objectWebsite) => {
+  const html = await fethHtml(objectWebsite);
+
+  const selector = cheerio.load(html);
+
+  const searchResults = selector("body").find(
+    ".wrapper > #content > div[class='main-content mt-10'] > .container > form[id='filterForm'] > div"
+  ).first().find(".custom-select > select[name='category_id'] >option");
+  // console.log(searchResults)
+
+
+  const deals = searchResults
+    .map((idx, el) => {
+      const elementSelector = selector(el);
+      const id = elementSelector.attr('value');
+      const name = elementSelector.text().trim();
+      // categories.insert({id, name}).then(()=>console.log('done')).catch((err)=>console.log(err))
+      // const rating = elementSelector
+      //   .find("div[class='func row'] > div[class='col-md-6 pl-0']> div")
+      //   .attr("data-rateit-value");
+      // console.log(rating)
+      // extractDeal(pageLink, rating);
+    })
+    .get();
+
+  // return deals;
+}
+
+
+const scrapSteam = async (objectWebsite) => {
+  
 
   const html = await fethHtml(objectWebsite);
 
@@ -88,6 +134,7 @@ const scrapSteam = async () => {
   const searchResults = selector("body").find(
     ".wrapper > #content > div[class='main-content mt-10'] > .container > .panel-vod > div[class='list-vod row category-tabs-item'] > div[class='item col-lg-2 col-md-3 col-sm-4 col-6'] "
   );
+
 
   const deals = searchResults
     .map((idx, el) => {
@@ -104,8 +151,34 @@ const scrapSteam = async () => {
   return deals;
 };
 
+const rottenTomatoGet = async () => {
+
+  const html = await fethHtml('https://www.rottentomatoes.com/m/the_woman_in_the_window_2020');
+
+  const selector = cheerio.load(html);
+  const searchResults = selector("body").find(
+    "div[class='body_main container'] > div[id='main_container'] > section[class='mob-body '] > div[id='mainColumn'] "
+  )
+  
+  const image = searchResults.find("div[id='topSection']> div[class='movie-thumbnail-wrap'] > div[class='center'] > img")
+  .attr('data-src')
+  const name = searchResults.find("div[id='topSection']> score-board > h1")
+  .text().trim(); 
+  console.log({
+    name,
+    image
+  })
+
+
+
+
+}
+
 app.listen(port, async () => {
   console.log(`Server is running on port: ${port}`);
-  const result = await scrapSteam();
-  console.log(result);
+  const result = await rottenTomatoGet()
+  //const objectWebsite = "https://247phim.com/phim/phim-le/nam/2021";
+  // const result = await scrapSteam(objectWebsite);
+  // let result = await scrapCategory(objectWebsite)
+  // console.log(result);
 });

@@ -1,4 +1,4 @@
 module.exports = {
   categories: require("./categories"),
-  products: require("./products"),
+  movies: require("./movies"),
 };
