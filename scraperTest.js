@@ -127,7 +127,7 @@ const scrapCategory = async (objectWebsite) => {
 
 const rottenTomatoGet = async () => {
   const html = await fethHtml(
-    "https://www.rottentomatoes.com/m/the_woman_in_the_window_2020"
+    "https://www.rottentomatoes.com/m/a_quiet_place_part_ii"
   );
 
   const selector = cheerio.load(html);
@@ -180,7 +180,8 @@ const rottenTomatoGet = async () => {
     lemon_score: score.attr("tomatometerscore"),
     user_score: score.attr("audiencescore"),
     on_screen,
-    summary
+    summary,
+    hot: Math.random() < 0.8
 
   });
 };
