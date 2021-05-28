@@ -8,10 +8,10 @@ const app = express();
 const fethHtml = async (url) => {
   try {
     const { data } = await axios.get(url);
-    // fs.writeFile("helloworld.txt", data, function (err) {
-    //   if (err) return console.log(err);
-    //   console.log("Hello World > helloworld.txt");
-    // });
+    fs.writeFile("helloworld.txt", data, function (err) {
+      if (err) return console.log(err);
+      console.log("Hello World > helloworld.txt");
+    });
     return data;
   } catch {
     console.error(
@@ -150,8 +150,12 @@ const rottenTomatoGet = async () => {
 
   const on_screen = searchResults
   .find("section[class='panel panel-rt panel-box movie_info media'] > div[class='media-body'] > div[class='panel-body content_body'] > ul[class='content-meta info'] > li")
-  .children("div[class='meta-value'] ").attr("datetime")
+  .children("div[class='meta-value'] ").find("time").first().text().trim()
 
+
+  const summary = searchResults
+  .find("section[class='panel panel-rt panel-box movie_info media'] > div[class='media-body'] > div[class='panel-body content_body'] > div[id='movieSynopsis']")
+  .text().trim()
   // console.log(on_screen.length)
 
 
@@ -175,7 +179,8 @@ const rottenTomatoGet = async () => {
     image,
     lemon_score: score.attr("tomatometerscore"),
     user_score: score.attr("audiencescore"),
-    on_screen
+    on_screen,
+    summary
 
   });
 };
