@@ -186,8 +186,25 @@ const rottenTomatoGet = async () => {
   });
 };
 
+const categoryGet = async  () =>{
+  const html = await fethHtml(
+    "https://www.rottentomatoes.com/browse/in-theaters/"
+  );
+
+  const selector = cheerio.load(html);
+  const searchResults = selector("body").find(
+    "div[class='body_main container'] > div[id='main_container'] > div[id='content-column'] > nav[id='topbar-container'] > ul > il "
+  );
+
+  console.log(searchResults.length)
+
+}
+
 app.listen(port, async () => {
   console.log(`Server is running on port: ${port}`);
-
-  const result = await rottenTomatoGet();
+  // const categories = await categoryGet()
+  // const result = await rottenTomatoGet();
+  let rawdata = fs.readFileSync('genres.json');
+  let data = JSON.parse(rawdata);
+  console.log(data.genres[3]);
 });
