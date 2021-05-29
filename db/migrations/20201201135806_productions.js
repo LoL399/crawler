@@ -1,12 +1,12 @@
 exports.up = async (knex) => {
   await knex.raw(`
-    CREATE TABLE categories 
+    CREATE TABLE productions
     (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT DEFAULT '',
-      description TEXT DEFAULT '',
-      alias TEXT DEFAULT '',
-      type TEXT DEFAULT '',
+      movie TEXT,
+      person TEXT,
+      type TEXT DEFAULT 'actors',
+      character TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,   
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP   
     )
@@ -15,6 +15,6 @@ exports.up = async (knex) => {
 
 exports.down = async (knex) => {
   await knex.raw(`
-    DROP TABLE categories
+    DROP TABLE productions
   `);
 };
