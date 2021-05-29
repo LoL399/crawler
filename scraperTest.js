@@ -8,10 +8,10 @@ const app = express();
 const fethHtml = async (url) => {
   try {
     const { data } = await axios.get(url);
-    fs.writeFile('helloworld.txt', data, function (err) {
-      if (err) return console.log(err);
-      console.log('Hello World > helloworld.txt');
-    });
+    // fs.writeFile('helloworld.txt', data, function (err) {
+    //   if (err) return console.log(err);
+    //   console.log('Hello World > helloworld.txt');
+    // });
     return data;
   } catch {
     console.error(
@@ -127,14 +127,7 @@ const scrapCategory = async (objectWebsite) => {
   // return deals;
 }
 
-
-<<<<<<< HEAD
-const scrapSteam = async (objectWebsite) => {
-  
-=======
 const scrapSteam = async () => {
-  const objectWebsite = "https://www.rottentomatoes.com/browse/in-theaters";
->>>>>>> 48e9c95ebd0155596339434a205b3356504d7ea6
 
   const html = await fethHtml(objectWebsite);
 
@@ -188,13 +181,7 @@ const rottenTomatoGet = async () => {
 
 app.listen(port, async () => {
   console.log(`Server is running on port: ${port}`);
-<<<<<<< HEAD
+
   const result = await rottenTomatoGet()
-  //const objectWebsite = "https://247phim.com/phim/phim-le/nam/2021";
-  // const result = await scrapSteam(objectWebsite);
-  // let result = await scrapCategory(objectWebsite)
-=======
-  // const result = await scrapSteam();
->>>>>>> 48e9c95ebd0155596339434a205b3356504d7ea6
-  // console.log(result);
+
 });
