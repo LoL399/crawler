@@ -1,20 +1,20 @@
 const knex = require("../knex");
 
 const insert = async (params) => {
-  await knex("productions").insert(params);
+  await knex("tvseasons").insert(params);
 };
 
 const getByParams = async (params) => {
-  const result = await knex("productions").select().where(params);
+  const result = await knex("tvseasons").select().where(params);
   return result;
 };
 
 const update = async (id, params) => {
-  await knex("productions").update(params).where({ id });
+  await knex("tvseasons").update(params).where({ id });
 };
 
 const getAllByOffset = async (offset) =>
-  await knex("productions").select().limit(500).offset(offset);
+  await knex("tvseasons").select().limit(500).offset(offset);
 
 module.exports = {
   insert,

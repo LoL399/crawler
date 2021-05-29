@@ -2,7 +2,7 @@ const express = require("express");
 const cheerio = require("cheerio");
 const { categories, movies, persons, products } = require("./db/repositories/index");
 const axios = require("axios").default;
-const port = process.env.PORT || 7000;
+const port = process.env.PORT || 20020
 fs = require("fs");
 const app = express();
 const fethHtml = async (url) => {
@@ -93,39 +93,48 @@ const rottenTomatoGet = async (link) => {
       await createProduct(name, actorName,actorRole )
     }
   })
-  await movies.insert({
-    name,
-    images,
-    lemon_score: score.attr('tomatometerscore'),
-    user_score: score.attr('audiencescore'),
-    on_screen,
-    summary,
-    rating: score.attr('rating') || 'not rating',
-    genres
-  }).then(()=>{
-    console.log(`add movie ${name}` )
-  })
+
+  if(name !== '')
+  {
+    await movies.insert({
+      name,
+      images,
+      lemon_score: score.attr('tomatometerscore'),
+      user_score: score.attr('audiencescore'),
+      on_screen,
+      summary,
+      rating: score.attr('rating') || 'not rating',
+      genres
+    }).then(()=>{
+      console.log(`add movie ${name}` )
+    })
+  }
+
 
 };
 
 const createProduct = async(movie, person, character) =>{
 
-  let product ={
-    movie,
-    person,
-    character
+
+
+  if(movie !== '')
+  {
+    let product ={
+      movie,
+      person,
+      character
+    }
+    await products.insert(product).then(()=>{
+      console.log(`add product for ${movie}` )
+    })
 
   }
-  await productions.insert(product).then(()=>{
-    console.log(`add product for ${movie}` )
-  })
+
 }
 
 const actorGet = async (actorLink) =>{
 
-  const html = await fethHtml(
-    'https://www.rottentomatoes.com/celebrity/1163951-emily_blunt'
-  );
+  const html = await fethHtml(actorLink);
 
   const selector = cheerio.load(html);
   const searchResults = selector("body").find(
@@ -140,9 +149,7 @@ const actorGet = async (actorLink) =>{
   const summary = searchResults.find("div[class='celebrity-bio__content'] > div[class='celebrity-bio__info'] > p[data-qa='celebrity-bio-summary']")
   .text().trim().replace(/[^a-zA-Z0-9)]'/gi, "")
   const images = []
-
   images.push(searchResults.find("a > img").attr("data-src"))
-
   selector("body").find(
     "div[class='container roma-layout__body'] > main[id='main_container'] > div[id='main-page-content'] > div[class='layout celebrity'] > article[class='layout__column layout__column--main'] > section[class='celebrity-photos']"
   ).find("div[class='celebrity-photos__wrap'] > div > ul > li")
@@ -152,51 +159,52 @@ const actorGet = async (actorLink) =>{
     images.push(imgLink)
     
   });
-  await persons.insert({
-    name,
-    birth,
-    born_in,
-    summary,
-    images
-  }).then(()=>{
-    console.log(`add person ${name}` )
-  })
+  if(name!=='')
+  {
+    await persons.insert({
+      name,
+      birth,
+      born_in,
+      summary,
+      images
+    }).then(()=>{
+      console.log(`add person ${name}` )
+    })
+  }
 
-  
 }
+  
 
+const prepareMovie = async (movieLink) => { 
 
-
-
-
+    const selector = cheerio.load(movieLink);
+    const searchResults = selector("body").find(
+      "div[class='body_main container'] > div[id='main_container'] > section[class='mob-body '] > div[id='mainColumn'] "
+    );
+    const name = searchResults
+    .find("div[id='topSection']> score-board > h1")
+    .text()
+    .trim();
+    const checkDb = await movies.getByParams({name: name})
+    if(checkDb.length === 0 &&( name !== '' || name !== null) )
+    { 
+      await rottenTomatoGet(movieLink);
+    }
+}
 app.listen(port, async () => {
   // const result = await rottenTomatoGet();
   // console.log(await persons.getAllByOffset(0))
   // const categories = await categoryGet()
   // await getCategories()
   // const actor = await actorGet();
-  // console.log('fetch start now ...')
-  // let rawdata = fs.readFileSync('topOffice.json');
-  // let data = JSON.parse(rawdata);
-  //   data.link.map(async (item, idx)=>{
-  //   let movieLink = data.baseUrl + item
-  //   const selector = cheerio.load(movieLink);
-  //   const searchResults = selector("body").find(
-  //     "div[class='body_main container'] > div[id='main_container'] > section[class='mob-body '] > div[id='mainColumn'] "
-  //   );
-  //   const name = searchResults
-  //   .find("div[id='topSection']> score-board > h1")
-  //   .text()
-  //   .trim();
-  //   const checkDb = await movies.getByParams({name: name})
-  //   if(checkDb.length === 0 &&( name !== '' || name !== null) )
-  //   {
-  //     console.log(`getting ${name} `)
-  //     await rottenTomatoGet(movieLink);
-  //   }
- 
-  // })
-  console.log(await movies.getAllByOffset(0))
+  console.log('fetch start now ...')
+  let rawdata = fs.readFileSync('topOffice.json');
+  let data = JSON.parse(rawdata);
+  for ( let item of data.link)
+  {
+    await prepareMovie(data.baseUrl + item)
+  }
 
+  // console.log(await products.getAllByOffset(0))
 })
 
