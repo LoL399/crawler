@@ -7,6 +7,7 @@ exports.up = async (knex) => {
         summary TEXT, 
         lemon_score INT DEFAULT 0,
         user_score INT DEFAULT 0,
+        images JSON[],
         status BOOL DEFAULT TRUE,
         hot BOOL DEFAULT FALSE,  
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,   

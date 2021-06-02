@@ -6,6 +6,7 @@ exports.up = async (knex) => {
         name TEXT,
         summary TEXT,
         on_screen DATE,
+        season_id INTEGER NOT NULL,
         lemon_score INT DEFAULT 0,
         user_score INT DEFAULT 0,
         status BOOL DEFAULT TRUE,

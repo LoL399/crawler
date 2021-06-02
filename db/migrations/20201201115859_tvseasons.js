@@ -4,7 +4,7 @@ exports.up = async (knex) => {
       (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         season_name TEXT,
-        movie_name TEXT,
+        series_name TEXT,
         summary TEXT,
         genres TEXT[],
         on_screen DATE, 

@@ -1,7 +1,7 @@
 const knex = require("../knex");
 
 const insert = async (params) => {
-  await knex("tvseasons").insert(params);
+  return await knex("tvseasons").insert(params).returning('id');
 };
 
 const getByParams = async (params) => {
