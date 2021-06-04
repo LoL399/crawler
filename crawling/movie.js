@@ -1,5 +1,6 @@
 const { fethHtml } = require("./fetchCraw");
 const { categories, movies, persons, products } = require("../db/repositories/index");
+const cheerio = require("cheerio");
 const categoryGet = async (genre) => {
   let rawdata = fs.readFileSync("genres.json");
   let data = JSON.parse(rawdata);
