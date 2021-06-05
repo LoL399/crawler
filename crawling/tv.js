@@ -2,6 +2,7 @@ const { fethHtml } = require("./fetchCraw");
 
 const { tvseasons, tvseries, episodes } = require("../db/repositories/index");
 const cheerio = require("cheerio");
+const { noImage } = require("./noImg");
 
 const generalFormatTVSeries = async (searchResults) => {
   const name = searchResults
@@ -57,37 +58,45 @@ const getTvseries = async () => {
     let result = await generalFormatTVSeries(searchResults);
 
     const images = [];
-
     for (let item of searchResults.find(
       "#movie-photos-panel > div > div > div> div "
     )) {
-      images.push(selector(item).find("div > a > img").attr("src"));
+      if(selector(item).find("div > a > img").attr("src"))
+        images.push(selector(item).find("div > a > img").attr("src"));
     }
 
-    for (let item of searchResults.find("#seasonList > div > a")) {
-      let link = selector(item);
-      let seasonName = link.find("season-list-item").attr("seasontitle");
-      console.log(
-        seasonName,
-        `https://www.rottentomatoes.com${link.attr("href")}`
-      );
 
-      try {
-        await getTvseasons(
-          `https://www.rottentomatoes.com${link.attr("href")}`,
-          seasonName,
-          result.name
-        );
-      } catch (error) {}
-    }
+
+    // for (let item of searchResults.find("#seasonList > div > a")) {
+    //   let link = selector(item);
+    //   let seasonName = link.find("season-list-item").attr("seasontitle");
+    //   let poster = link.find("season-list-item").attr("posterurl");
+    //   console.log(
+    //     seasonName,
+    //     poster,
+    //     `https://www.rottentomatoes.com${link.attr("href")}`
+    //   );
+
+    //   try {
+    //     await getTvseasons(
+    //       `https://www.rottentomatoes.com${link.attr("href")}`,
+    //       seasonName,
+    //       poster,
+    //       result.name
+    //     );
+    //   } catch (error) {}
+    
+    // }
+    console.log({
+
+      ...result,
+      images
+    });
 
     // seasonList.push(link.attr('href'))
   }
 
-  console.log({
-    images,
-    ...result,
-  });
+
   // tvseries
   //   .insert({
   //     images,
@@ -97,7 +106,7 @@ const getTvseries = async () => {
   //     console.log(`add ${result.name}`);})
 };
 
-const getTvseasons = async (link, name, showName) => {
+const getTvseasons = async (link, name, poster, showName) => {
   const html = await fethHtml(link);
   if (html) {
     const selector = cheerio.load(html);
@@ -204,7 +213,8 @@ const getTvseasons = async (link, name, showName) => {
       genres,
       on_screen,
       network,
-      images,
+      poster,
+      images: images.length ===0 ? noImage : images,
     });
     // tvseasons
     //   .insert({
@@ -240,7 +250,7 @@ const getEpisodes = async (link, sname) => {
       .text()
       .replace(/\r?\n|\r/g, "")
       .trim();
-    const on_screen = searchResults
+    const air_date = searchResults
       .find(
         "section[class='panel panel-rt panel-box'] > div[class='panel-body content_body'] > ul > li"
       )
@@ -277,9 +287,9 @@ const getEpisodes = async (link, sname) => {
       name,
       // name,
       lemon_score: score.slice(0, score.length - 1),
-      on_screen,
+      air_date,
       summary,
-      images,
+      images: images.length ===0 ? noImage : images,
     });
 
     // episodes
