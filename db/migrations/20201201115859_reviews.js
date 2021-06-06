@@ -1,16 +1,12 @@
 exports.up = async (knex) => {
     await knex.raw(`
-      CREATE TABLE episodes 
+      CREATE TABLE reviews 
       (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        summary TEXT,
-        airDate DATE,
-        season_id INTEGER NOT NULL,
-        lemon_score INT DEFAULT 0,
-        user_score INT DEFAULT 0,
-        status BOOL DEFAULT TRUE,
-        hot BOOL DEFAULT FALSE,  
+        content TEXT,
+        score TEXT, 
+        pid INTEGER NOT NULL,
+        uid INTEGER NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,   
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP   
       )
@@ -19,7 +15,7 @@ exports.up = async (knex) => {
   
   exports.down = async (knex) => {
     await knex.raw(`
-      DROP TABLE episodes
+      DROP TABLE reviews
       `);
   };
   

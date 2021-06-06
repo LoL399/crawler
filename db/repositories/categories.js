@@ -1,7 +1,9 @@
 const knex = require("../knex");
 
 const insert = async (params) => {
+  console.log(`adding ${params.name}`)
   await knex("categories").insert(params);
+  
 };
 
 const getByParams = async (params) => {

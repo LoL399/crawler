@@ -1,16 +1,16 @@
 {
-    "baseUrl": "https://www.rottentomatoes.com",
     "link": [
-        "/m/a_quiet_place_part_ii",
-        "/m/cruella",
-        "/m/shepherd_the_story_of_a_jewish_dog",
-        "/m/funhouse_2021",
-        "/m/american_traitor_the_trial_of_axis_sally",
-        "/m/women_2021",
-        "/m/endangered_species_2021",
-        "/m/port_authority",
-        "/m/moby_doc",
-        "/m/ahead_of_the_curve",
-        "/m/welcome_matt"
+        "https://www.rottentomatoes.com/tv/hacks",
+        "https://www.rottentomatoes.com/tv/mare_of_easttown",
+        "https://www.rottentomatoes.com/tv/master_of_none",
+        "https://www.rottentomatoes.com/tv/panic",
+        "https://www.rottentomatoes.com/tv/marvels_modok",
+        "https://www.rottentomatoes.com/tv/the_kominsky_method",
+        "https://www.rottentomatoes.com/tv/startup",
+        "https://www.rottentomatoes.com/tv/the_underground_railroad",
+        "https://www.rottentomatoes.com/tv/ragnarok",
+        "https://www.rottentomatoes.com/tv/for_all_mankind",
+        "https://www.rottentomatoes.com/tv/the_walking_dead",
+        "https://www.rottentomatoes.com/tv/game-of-thrones"
     ]
 }

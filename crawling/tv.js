@@ -1,8 +1,13 @@
 const { fethHtml } = require("./fetchCraw");
 
 const { tvseasons, tvseries, episodes } = require("../db/repositories/index");
+const {getTrailer} = require("./trailer.js")
 const cheerio = require("cheerio");
 const { noImage } = require("./noImg");
+const { getReviewTV } = require("./review");
+const { persons } = require("../db/repositories/index.js");
+const {actorGet, createProduct} = require ("./movie.js")
+
 
 const generalFormatTVSeries = async (searchResults) => {
   const name = searchResults
@@ -46,10 +51,8 @@ const generalFormatTVSeries = async (searchResults) => {
   };
 };
 
-const getTvseries = async () => {
-  const html = await fethHtml(
-    "https://www.rottentomatoes.com/tv/the_walking_dead/"
-  );
+const getTvseries = async (link) => {
+  const html = await fethHtml(link);
   if (html) {
     const selector = cheerio.load(html);
     const searchResults = selector("body").find(
@@ -61,41 +64,108 @@ const getTvseries = async () => {
     for (let item of searchResults.find(
       "#movie-photos-panel > div > div > div> div "
     )) {
-      if(selector(item).find("div > a > img").attr("src"))
+      if (selector(item).find("div > a > img").attr("src"))
         images.push(selector(item).find("div > a > img").attr("src"));
     }
 
+    const poster = searchResults.find("#topSection > #tv-image-section > a > img").attr('src')
+    // const trailer = await getTrailer(`${link}/videos`)
+    let info = {};
+    info["summary"] = result.summary;
+    info["name"] = result.name;
+    info["poster"] = poster;
+    selector("body")
+      .find(
+        "div[class='body_main container'] > div[id='main_container'] > div[class='col-right col-full-xs pull-right'] "
+      )
+      .find("section[id='detail_panel'] > div > table > tbody > tr ")
+      .map((idx, el) => {
+        let key = selector(el).find("td").first().text().trim().slice(0, -1);
+        let item = selector(el)
+          .find("td")
+          .last()
+          .text()
+          .replace(/\n\s\s+/g, "")
+          .trim();
+        switch (key) {
+          case "Original Language":
+            key = "originalLanguage";
+            break;
+          case "rating":
+            key = "ratingPermission";
+            break;
+          case "Release Date (Theaters)":
+            key = "theatersDate";
+            break;
+          case "Aspect Ratio":
+            key = "aspectRatio";
+            break;
+          case "Premiere Date":
+            key = "starting";
+            break;
+          case "Executive Producers":
+            key = "producers";
+            break;
+          case "TV Network":
+            key = "network";
+            break;
+            default:
+              {key = null, item=null}
+        }
+        if(key)
+        {
+          info[key.charAt(0).toLowerCase() + key.slice(1)] = item;
+        }
+      });
+
+    // info['trailer'] = trailer
+    let id = 0
+    const checkDb = await tvseries.getByParams({name: result.name})
+    if(checkDb[0])
+    {
+      id = checkDb[0]
+    }
+    else
+    {
+      id = await tvseries.insert(info)
+    }
 
 
-    // for (let item of searchResults.find("#seasonList > div > a")) {
-    //   let link = selector(item);
-    //   let seasonName = link.find("season-list-item").attr("seasontitle");
-    //   let poster = link.find("season-list-item").attr("posterurl");
-    //   console.log(
-    //     seasonName,
-    //     poster,
-    //     `https://www.rottentomatoes.com${link.attr("href")}`
-    //   );
+    for (let item of searchResults.find("#seasonList > div > a")) {
+      let link = selector(item);
+      let seasonName = link.find("season-list-item").attr("seasontitle");
+      let poster = link.find("season-list-item").attr("posterurl");
+      const checkDb = await tvseasons.getByParams({season_name: result.name})
+      if(checkDb[0])
+      {
+        console.log('Already')
+      }
+      else
+      {
+        await getTvseasons(
+          `https://www.rottentomatoes.com${link.attr("href")}`,id,
+          seasonName,
+          poster,
+          result.name)
+      }
+  
 
-    //   try {
-    //     await getTvseasons(
-    //       `https://www.rottentomatoes.com${link.attr("href")}`,
-    //       seasonName,
-    //       poster,
-    //       result.name
-    //     );
-    //   } catch (error) {}
-    
-    // }
-    console.log({
 
-      ...result,
-      images
-    });
+      // try {
+
+      //   );
+      // } catch (error) {}
+
+    }
+
+    // console.log({
+
+    //   ...result,
+    //   images
+    // });
 
     // seasonList.push(link.attr('href'))
   }
-
 
   // tvseries
   //   .insert({
@@ -106,7 +176,7 @@ const getTvseries = async () => {
   //     console.log(`add ${result.name}`);})
 };
 
-const getTvseasons = async (link, name, poster, showName) => {
+const getTvseasons = async (link, id, name, poster, showName) => {
   const html = await fethHtml(link);
   if (html) {
     const selector = cheerio.load(html);
@@ -151,7 +221,7 @@ const getTvseasons = async (link, name, poster, showName) => {
       .trim()
       .split(",");
 
-    const on_screen = searchResults
+    const starting = searchResults
       .find(
         "#mainColumn > .episode-list-wrap > section[class='panel panel-rt panel-box movie_info'] > div > div > ul > li "
       )
@@ -170,19 +240,56 @@ const getTvseasons = async (link, name, poster, showName) => {
     const crawlImages = searchResults.find(
       "#mainColumn > .episode-list-wrap > section[id='movie-photos-panel'] > div[class='panel-body content_body allow-overflow'] > #photos-carousel-root > div[class='Carousel PhotosCarousel'] > div"
     );
-    for (let item of crawlImages) {
-      let search = selector(item).find("div > a > img").attr("src");
-      images.push(search);
-    }
-    for (let item of searchResults.find(
-      " #tv-series-cast > section > div[class='panel-body content_body'] > .castSection > div"
-    )) {
-      const actorName = selector(item).find("div > a > span ").text().trim();
-      const actorLink = selector(item).find("a").attr("href");
-      const actorRole = selector(item)
-        .find("div > span[class='characters subtle smaller']")
-        .text()
-        .trim();
+
+    const whatToKnow = searchResults
+    .find("div[class='tv-series__series-info'] > div[class='tv-series__series-info-content'] > #movieSynopsis").text().trim()
+
+    const crew = []
+    
+    searchResults
+      .find("div[id='tv-series-cast'] > section > div[class='panel-body content_body'] > div")
+      .map(async (idx, el) => {
+        const elementSelector = selector(el);
+        const personName = elementSelector.find("div > a > span").text().trim();
+        const actorLink = elementSelector.find("a").attr("href");
+        const castName = elementSelector
+          .find("div > span[class='characters subtle smaller']")
+          .text()
+          .trim();
+
+        let id = 0;
+
+        const checkDb = await persons.getByParams({ name: personName });
+        if (checkDb.length == 0) {
+          id = await actorGet(`https://www.rottentomatoes.com${actorLink}`);
+        } 
+        else
+        {
+          id = checkDb[0].id
+        }
+
+        crew.push({ id, characterName: castName });
+      })
+
+
+    const season_id = await tvseasons.insert({season_name: name, series: id, summary, starting})
+
+    let product_id = await createProduct("tv", season_id, whatToKnow, images, crew);
+    await getReviewTV(`${link}\reviews`,product_id)
+
+    // for (let item of crawlImages) {
+    //   let search = selector(item).find("div > a > img").attr("src");
+    //   images.push(search);
+    // }
+    // for (let item of searchResults.find(
+    //   " #tv-series-cast > section > div[class='panel-body content_body'] > .castSection > div"
+    // )) {
+    //   const actorName = selector(item).find("div > a > span ").text().trim();
+    //   const actorLink = selector(item).find("a").attr("href");
+    //   const actorRole = selector(item)
+    //     .find("div > span[class='characters subtle smaller']")
+    //     .text()
+    //     .trim();
       // const checkDb = await persons.getByParams({ name: actorName });
       // if (actorLink && checkDb.length === 0 && actorName !== "") {
       // const item = await actorGet(`https://www.rottentomatoes.com${actorLink}`);
@@ -190,49 +297,31 @@ const getTvseasons = async (link, name, poster, showName) => {
       // if (actorName !== "") {
       //   await createProduct(name, actorName, actorRole);
       // }
-    }
 
+
+    // }
+
+    const episodes = []
     const episodeList = searchResults.find(
       "#mainColumn > .episode-list-wrap > #desktopEpisodeList > div[class='panel-body content_body'] > #episode-list-root > .episodes > .bottom_divider"
     );
     for (let episode of episodeList) {
       let item = selector(episode).find("div > div > div > a");
       //console.log(item.attr("href"))
-      await getEpisodes(
+
+      let episodeInfo = await getEpisodes(
         `https://www.rottentomatoes.com${item.attr("href")}`,
-        name
+        name,season_id
       );
+
+    // episodes.push(episodeInfo)
+      
+
     }
-
-    console.log({
-      movie_name: showName,
-      season_name: name,
-      lemon_score: lemon_score.slice(0, lemon_score.length - 1),
-      user_score: user_score.slice(0, user_score.length - 1),
-      summary,
-      genres,
-      on_screen,
-      network,
-      poster,
-      images: images.length ===0 ? noImage : images,
-    });
-    // tvseasons
-    //   .insert({
-    //     movie_name: showName,
-    //     season_name: name,
-    //     lemon_score: lemon_score.slice(0, lemon_score.length - 1),
-    //     user_score: user_score.slice(0, user_score.length - 1),
-    //     summary,
-    //     genres,
-    //     on_screen,
-    //     network,
-    //     images,
-
-    //   })
   }
 };
 
-const getEpisodes = async (link, sname) => {
+const getEpisodes = async (link, sname,id) => {
   const html = await fethHtml(link);
   if (html) {
     const selector = cheerio.load(html || "");
@@ -250,7 +339,7 @@ const getEpisodes = async (link, sname) => {
       .text()
       .replace(/\r?\n|\r/g, "")
       .trim();
-    const air_date = searchResults
+    const airDate = searchResults
       .find(
         "section[class='panel panel-rt panel-box'] > div[class='panel-body content_body'] > ul > li"
       )
@@ -282,15 +371,21 @@ const getEpisodes = async (link, sname) => {
     for (let item of crawlImg) {
       images.push(selector(item).find("div > a > img").attr("src"));
     }
-    console.log({
-      season_name: sname,
+
+    episodes.insert({
+      season_id: id,
       name,
       // name,
-      lemon_score: score.slice(0, score.length - 1),
-      air_date,
+      airDate,
       summary,
-      images: images.length ===0 ? noImage : images,
     });
+
+
+
+
+
+
+    
 
     // episodes
     //   .insert({

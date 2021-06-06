@@ -6,7 +6,7 @@ module.exports = {
   tvseasons: require("./tvseasons"),
   tvseries: require("./tvseries"),
   episodes: require("./episodes"),
-  
-
-  
+  news: require("./news"),
+  reviews: require("./reviews"),
+  critic: require("./critics"),
 };
