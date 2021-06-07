@@ -119,44 +119,42 @@ const getTvseries = async (link) => {
       });
 
     // info['trailer'] = trailer
-    let id = 0
-    const checkDb = await tvseries.getByParams({name: result.name})
-    if(checkDb[0])
-    {
-      id = checkDb[0]
-    }
-    else
-    {
-      id = await tvseries.insert(info)
-    }
+    // let id = 0
+    // const checkDb = await tvseries.getByParams({name: result.name})
+    // if(checkDb[0])
+    // {
+    //   id = checkDb[0]
+    // }
+    // else
+    // {
+    //   id = await tvseries.insert(info)
+    // }
 
+    let seasonList = []
 
     for (let item of searchResults.find("#seasonList > div > a")) {
       let link = selector(item);
       let seasonName = link.find("season-list-item").attr("seasontitle");
       let poster = link.find("season-list-item").attr("posterurl");
-      const checkDb = await tvseasons.getByParams({season_name: result.name})
-      if(checkDb[0])
-      {
-        console.log('Already')
-      }
-      else
-      {
-        await getTvseasons(
-          `https://www.rottentomatoes.com${link.attr("href")}`,id,
+      // const checkDb = await tvseasons.getByParams({season_name: result.name})
+      // if(checkDb[0])
+      // {
+      //   console.log('Already')
+      // }
+      // else
+      // {
+        let season = await getTvseasons(
+          `https://www.rottentomatoes.com${link.attr("href")}`,
           seasonName,
           poster,
           result.name)
-      }
-  
+        seasonList.push (season)
+      // }
 
-
-      // try {
-
-      //   );
-      // } catch (error) {}
 
     }
+
+    createProduct('TV',info,null,null,null,null, seasonList )
 
     // console.log({
 
@@ -176,13 +174,18 @@ const getTvseries = async (link) => {
   //     console.log(`add ${result.name}`);})
 };
 
-const getTvseasons = async (link, id, name, poster, showName) => {
+const getTvseasons = async (link, name, poster, showName) => {
   const html = await fethHtml(link);
   if (html) {
     const selector = cheerio.load(html);
     const searchResults = selector("body").find(
       "div[class='body_main container'] > div[id='main_container'] > article > div "
     );
+
+
+    
+    // let product_id = await createProduct("tv", season_id, whatToKnow, images, crew);
+
 
     const score = searchResults
       .find(
@@ -244,62 +247,9 @@ const getTvseasons = async (link, id, name, poster, showName) => {
     const whatToKnow = searchResults
     .find("div[class='tv-series__series-info'] > div[class='tv-series__series-info-content'] > #movieSynopsis").text().trim()
 
-    const crew = []
-    
-    searchResults
-      .find("div[id='tv-series-cast'] > section > div[class='panel-body content_body'] > div")
-      .map(async (idx, el) => {
-        const elementSelector = selector(el);
-        const personName = elementSelector.find("div > a > span").text().trim();
-        const actorLink = elementSelector.find("a").attr("href");
-        const castName = elementSelector
-          .find("div > span[class='characters subtle smaller']")
-          .text()
-          .trim();
 
-        let id = 0;
+    // const seasonList = await tvseasons.insert({season_name: name, series: id, summary, starting})
 
-        const checkDb = await persons.getByParams({ name: personName });
-        if (checkDb.length == 0) {
-          id = await actorGet(`https://www.rottentomatoes.com${actorLink}`);
-        } 
-        else
-        {
-          id = checkDb[0].id
-        }
-
-        crew.push({ id, characterName: castName });
-      })
-
-
-    const season_id = await tvseasons.insert({season_name: name, series: id, summary, starting})
-
-    let product_id = await createProduct("tv", season_id, whatToKnow, images, crew);
-    await getReviewTV(`${link}\reviews`,product_id)
-
-    // for (let item of crawlImages) {
-    //   let search = selector(item).find("div > a > img").attr("src");
-    //   images.push(search);
-    // }
-    // for (let item of searchResults.find(
-    //   " #tv-series-cast > section > div[class='panel-body content_body'] > .castSection > div"
-    // )) {
-    //   const actorName = selector(item).find("div > a > span ").text().trim();
-    //   const actorLink = selector(item).find("a").attr("href");
-    //   const actorRole = selector(item)
-    //     .find("div > span[class='characters subtle smaller']")
-    //     .text()
-    //     .trim();
-      // const checkDb = await persons.getByParams({ name: actorName });
-      // if (actorLink && checkDb.length === 0 && actorName !== "") {
-      // const item = await actorGet(`https://www.rottentomatoes.com${actorLink}`);
-      // }
-      // if (actorName !== "") {
-      //   await createProduct(name, actorName, actorRole);
-      // }
-
-
-    // }
 
     const episodes = []
     const episodeList = searchResults.find(
@@ -311,23 +261,27 @@ const getTvseasons = async (link, id, name, poster, showName) => {
 
       let episodeInfo = await getEpisodes(
         `https://www.rottentomatoes.com${item.attr("href")}`,
-        name,season_id
+        name
       );
 
-    // episodes.push(episodeInfo)
+    episodes.push(episodeInfo)
+
+    return  {season_name: name, summary, starting, episodes}
       
 
     }
   }
 };
 
-const getEpisodes = async (link, sname,id) => {
+const getEpisodes = async (link, sname) => {
   const html = await fethHtml(link);
   if (html) {
     const selector = cheerio.load(html || "");
     const searchResults = selector("body").find(
       "div[class='body_main container'] > div[id='main_container'] > #main_container >div[id='mainColumn'] "
     );
+
+    // const postId = await getReviewTV(`${link}\reviews`);
 
     const name = searchResults
       .find(
@@ -372,31 +326,21 @@ const getEpisodes = async (link, sname,id) => {
       images.push(selector(item).find("div > a > img").attr("src"));
     }
 
-    episodes.insert({
-      season_id: id,
+    // episodes.insert({
+    //   season_id: id,
+    //   name,
+    //   // name,
+    //   airDate,
+    //   summary,
+    // });
+
+    return({
       name,
       // name,
       airDate,
       summary,
     });
 
-
-
-
-
-
-    
-
-    // episodes
-    //   .insert({
-    //     season_id: id,
-    //     name,
-    //     lemon_score: score.slice(0, score.length - 1),
-    //     on_screen,
-    //     summary,
-    //     images,
-    //   })
-    //   .then(() => console.log(`add ${(name, id)}`));
   }
 };
 

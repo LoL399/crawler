@@ -40,6 +40,20 @@ const rottenTomatoGet = async (link) => {
     const selector = cheerio.load(html);
     const searchResults = getBody(selector);
 
+    // const postId = [];
+
+    // let page = await getReviewPage(`${link}/reviews?type=top_critics`);
+    // for (i = 1; i < page; i++) {
+    //   let review = await getReview(
+    //     `${link}/reviews?type=top_critics&sort=&page=${i}`
+    //   );
+
+    //   postId.concat(review);
+    // }
+
+    // let critic = await criticReviews(`${link}/reviews?type=user`);
+    // postId.concat(critic);
+
     const images = [];
     const poster = searchResults
       .find("#topSection > .movie-thumbnail-wrap > .center > img ")
@@ -57,16 +71,6 @@ const rottenTomatoGet = async (link) => {
       .find("div[id='topSection']> score-board > h1")
       .text()
       .trim();
-    // const score = searchResults.find("div[id='topSection']> score-board");
-    // const on_screen = searchResults
-    //   .find(
-    //     "section[class='panel panel-rt panel-box movie_info media'] > div[class='media-body'] > div[class='panel-body content_body'] > ul[class='content-meta info'] > li"
-    //   )
-    //   .children("div[class='meta-value'] ")
-    //   .find("time")
-    //   .first()
-    //   .text()
-    //   .trim();
     const summary = searchResults
       .find(
         "section[class='panel panel-rt panel-box movie_info media'] > div[class='media-body'] > div[class='panel-body content_body'] > div[id='movieSynopsis']"
@@ -117,27 +121,26 @@ const rottenTomatoGet = async (link) => {
           case "View the collection":
             key = "collection";
             break;
-          default:
-            {key = null, item=null}
+          default: {
+            (key = null), (item = null);
+          }
         }
-        if(key)
-        {
+        if (key) {
           info[key.charAt(0).toLowerCase() + key.slice(1)] = item;
         }
-       
       });
     info["summary"] = summary;
     info["name"] = name;
     info["poster"] = poster;
     info["trailer"] = trailer;
     // console.log(info);
-    let movie_id = "";
-    const checkDb = await movies.getByParams({ name: name });
-    if (checkDb.length == 0) {
-      movie_id = await movies.insert(info);
-    } else {
-      movie_id = checkDb[0].id;
-    }
+    // let movie_id = "";
+    // const checkDb = await movies.getByParams({ name: name });
+    // if (checkDb.length == 0) {
+    //   movie_id = await movies.insert(info);
+    // } else {
+    //   movie_id = checkDb[0].id;
+    // }
 
     const whatToKnow = searchResults
       .find("#topSection > #where-to-know > div > section > p > span")
@@ -149,24 +152,6 @@ const rottenTomatoGet = async (link) => {
     // .find("section[class='panel panel-rt panel-box movie_info media'] > div > div > ul > li ")
     // .first().find('div').last().text().trim();
 
-    const genres = searchResults
-      .find(
-        "section[class='panel panel-rt panel-box movie_info media'] > div > div > ul > li "
-      )
-      .children("div[class='meta-value genre']")
-      .text()
-      .replace(/\s\s+/g, " ")
-      .trim()
-      .split(",");
-
-    genres.map(async (genre) => {
-      let genreName =
-        genre.trim().charAt(0).toUpperCase() + genre.trim().slice(1);
-      const checkDb = await categories.getByParams({ name: genreName });
-      if (checkDb.length === 0) {
-        await categories.insert({ name: genreName });
-      }
-    });
     const crew = [];
     searchResults
       .find("section[id='movie-cast'] > div > div > div")
@@ -179,37 +164,33 @@ const rottenTomatoGet = async (link) => {
           .text()
           .trim();
 
-        let id = 0;
+        // let id = 0;
 
-        const checkDb = await persons.getByParams({ name: personName });
-        if (checkDb.length == 0) {
-          id = await actorGet(`https://www.rottentomatoes.com${actorLink}`);
-        } 
-        else
-        {
-          id = checkDb[0].id
-        }
-
-        crew.push({ id, characterName: castName });
-        // if (actorName !== "") {
-        //   await createProduct(name, actorName, actorRole);
+        // const checkDb = await persons.getByParams({ name: personName });
+        // if (checkDb.length == 0) {
+        //   id = await actorGet(`https://www.rottentomatoes.com${actorLink}`);
         // }
+        // else
+        // {
+        //   id = checkDb[0].id
+        // }
+
+        crew.push({ personName, characterName: castName });
+        // if (actorName !== "") {
+        // createProduct(name, actorName, actorRole);
+        // }
+
       });
     // console.log({ crew });
+    
+    await createProduct(
+      "Movie",
+      info,
+      whatToKnow,
+      images,
+      crew,
 
-
-    let product_id = await createProduct("Movie", movie_id, whatToKnow, images, crew);
-    let page = await getReviewPage(`${link}/reviews?type=top_critics`);
-    for (i = 1; i < page; i++) {
-      let review = await getReview(
-        `${link}/reviews?type=top_critics&sort=&page=${i}`,product_id
-      );
-    }
-    let review = await criticReviews(`${link}/reviews?type=user`,product_id);
-
-
-
-
+    );
   }
 };
 
@@ -220,26 +201,35 @@ const createProduct = async (
   images,
   crew,
   review,
-  season
+  seasons
 ) => {
-  if (info) {
-    let product = {
-      type,
-      info,
-      crew,
-      whatToKnow,
-      photos: images,
-    };
-    if (season) {
-      product.season = season;
-    }
-    const checkDb = await products.getByParams({ info: info });
-    if (checkDb.length == 0) {
-      return await products.insert(product)
-    } else {
-      return checkDb[0].id
-    }
-  }
+  // if (info) {
+  //   let product = {
+  //     type,
+  //     info,
+  //     crew,
+  //     whatToKnow,
+  //     photos: images,
+  //   };
+  //   if (season) {
+  //     product.season = season;
+  //   }
+  //   const checkDb = await products.getByParams({ info: info });
+  //   if (checkDb.length == 0) {
+  //     return await products.insert(product);
+  //   } else {
+  //     return checkDb[0].id;
+  //   }
+  // }
+
+  console.log({
+    type,
+    info,
+    crew,
+    whatToKnow,
+    photos: images,
+    seasons
+  });
 };
 
 const actorGet = async (actorLink) => {
