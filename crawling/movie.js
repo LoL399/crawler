@@ -40,19 +40,12 @@ const rottenTomatoGet = async (link) => {
     const selector = cheerio.load(html);
     const searchResults = getBody(selector);
 
-    // const postId = [];
-
     // let page = await getReviewPage(`${link}/reviews?type=top_critics`);
     // for (i = 1; i < page; i++) {
-    //   let review = await getReview(
-    //     `${link}/reviews?type=top_critics&sort=&page=${i}`
-    //   );
 
-    //   postId.concat(review);
+    const postId = await getReview(`${link}/reviews`);
     // }
-
-    // let critic = await criticReviews(`${link}/reviews?type=user`);
-    // postId.concat(critic);
+    // postId.concat(await criticReviews(`${link}/reviews?type=user`));
 
     const images = [];
     const poster = searchResults
@@ -179,17 +172,17 @@ const rottenTomatoGet = async (link) => {
         // if (actorName !== "") {
         // createProduct(name, actorName, actorRole);
         // }
-
       });
     // console.log({ crew });
-    
+
     await createProduct(
       "Movie",
       info,
-      whatToKnow,
+      JSON.stringify({ title: "CRITICS CONSENSUS", content: whatToKnow }),
       images,
       crew,
-
+      null,
+      postId
     );
   }
 };
@@ -200,36 +193,20 @@ const createProduct = async (
   whatToKnow,
   images,
   crew,
-  review,
-  seasons
+  seasons,
+  postId
 ) => {
-  // if (info) {
-  //   let product = {
-  //     type,
-  //     info,
-  //     crew,
-  //     whatToKnow,
-  //     photos: images,
-  //   };
-  //   if (season) {
-  //     product.season = season;
-  //   }
-  //   const checkDb = await products.getByParams({ info: info });
-  //   if (checkDb.length == 0) {
-  //     return await products.insert(product);
-  //   } else {
-  //     return checkDb[0].id;
-  //   }
-  // }
-
-  console.log({
+  let product = {
     type,
-    info,
-    crew,
-    whatToKnow,
+    info: JSON.stringify(info),
+    crew: JSON.stringify(crew),
+    whatToKnow: JSON.stringify(whatToKnow),
     photos: images,
-    seasons
-  });
+    seasons: JSON.stringify(seasons),
+    postId,
+  };
+
+  await products.insert(product);
 };
 
 const actorGet = async (actorLink) => {

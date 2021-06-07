@@ -10,6 +10,7 @@ exports.up = async (knex) => {
       whatToKnow JSON[],
       streamings TEXT[],
       seasons JSON[],
+      postId INTEGER[],
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,   
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP   
     )

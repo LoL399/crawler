@@ -1,5 +1,5 @@
 const cheerio = require("cheerio");
-const { news } = require("../db/repositories");
+const { posts } = require("../db/repositories");
 const { fethHtml } = require("./fetchCraw");
 
 const writefile = async (page) => {
@@ -23,9 +23,14 @@ const getNewsLink = async (link) =>{
     const links = [] 
     for (let div of searchResult)
     {
-
       selector(div).find("div[class='col-sm-8 newsItem col-full-xs']").map(async (id, el)=>{
-        await getNews(selector(el).find('a').attr('href'))
+
+
+        let date = selector(el).find("a > div[class='panel bannerCaption'] > .panel-body > p[class='noSpacing publication-date']")
+        .text().trim()
+
+
+        await getNews(selector(el).find('a').attr('href'),date)
       })
     }
 
@@ -33,7 +38,7 @@ const getNewsLink = async (link) =>{
   }
 }
 
-const getNews = async (link) => {
+const getNews = async (link,date) => {
   const html = await fethHtml(link);
 
   if (html) {
@@ -43,8 +48,17 @@ const getNews = async (link) => {
     );
     if(searchResult.html())
     {
-      await news.insert({content: searchResult.html().toString()})
+      await posts.insert(
+        {
+          type: "news",
+          content: searchResult.html().toString(),
+          date,
+  
+        }
+      )
     }
+
+    
 
 
 

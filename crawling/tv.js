@@ -1,13 +1,12 @@
 const { fethHtml } = require("./fetchCraw");
 
 const { tvseasons, tvseries, episodes } = require("../db/repositories/index");
-const {getTrailer} = require("./trailer.js")
+const { getTrailer } = require("./trailer.js");
 const cheerio = require("cheerio");
 const { noImage } = require("./noImg");
 const { getReviewTV } = require("./review");
 const { persons } = require("../db/repositories/index.js");
-const {actorGet, createProduct} = require ("./movie.js")
-
+const { actorGet, createProduct } = require("./movie.js");
 
 const generalFormatTVSeries = async (searchResults) => {
   const name = searchResults
@@ -59,16 +58,58 @@ const getTvseries = async (link) => {
       "div[class='body_main container'] > div[id='main_container'] > div[class='tv-series col-left-center col-full-xs'] "
     );
     let result = await generalFormatTVSeries(searchResults);
+    let seasonList = [];
+    for (let item of searchResults.find("#seasonList > div > a")) {
+      let link = selector(item);
+      let seasonName = link.find("season-list-item").attr("seasontitle");
+      let poster = link.find("season-list-item").attr("posterurl");
+      seasonList.push(
+        await getTvseasons(
+          `https://www.rottentomatoes.com${link.attr("href")}`,
+          seasonName,
+          poster,
+          result.name
+        )
+      );
+    }
 
-    const images = [];
+    const crew = [];
+    searchResults
+      .find("#tv-series-cast > section > div > div > div")
+      .map(async (idx, el) => {
+        const elementSelector = selector(el);
+        const personName = elementSelector.find("div > a > span").text().trim();
+        const actorLink = elementSelector.find("a").attr("href");
+        const castName = elementSelector
+          .find("div > span[class='characters subtle smaller']")
+          .text()
+          .trim();
+        
+        
+          crew.push({ personName, characterName: castName });
+
+
+        // const checkDb = await persons.getByParams({ name: personName });
+        // if (checkDb.length == 0) {
+        //  let id = await actorGet(`https://www.rottentomatoes.com${actorLink}`);
+        // } else {
+        //   id = checkDb[0].id;
+        // }
+
+
+      });
+
+    const photos = [];
     for (let item of searchResults.find(
       "#movie-photos-panel > div > div > div> div "
     )) {
       if (selector(item).find("div > a > img").attr("src"))
-        images.push(selector(item).find("div > a > img").attr("src"));
+        photos.push(selector(item).find("div > a > img").attr("src"));
     }
 
-    const poster = searchResults.find("#topSection > #tv-image-section > a > img").attr('src')
+    const poster = searchResults
+      .find("#topSection > #tv-image-section > a > img")
+      .attr("src");
     // const trailer = await getTrailer(`${link}/videos`)
     let info = {};
     info["summary"] = result.summary;
@@ -109,69 +150,18 @@ const getTvseries = async (link) => {
           case "TV Network":
             key = "network";
             break;
-            default:
-              {key = null, item=null}
+          default: {
+            (key = null), (item = null);
+          }
         }
-        if(key)
-        {
+        if (key) {
           info[key.charAt(0).toLowerCase() + key.slice(1)] = item;
         }
       });
 
-    // info['trailer'] = trailer
-    // let id = 0
-    // const checkDb = await tvseries.getByParams({name: result.name})
-    // if(checkDb[0])
-    // {
-    //   id = checkDb[0]
-    // }
-    // else
-    // {
-    //   id = await tvseries.insert(info)
-    // }
-
-    let seasonList = []
-
-    for (let item of searchResults.find("#seasonList > div > a")) {
-      let link = selector(item);
-      let seasonName = link.find("season-list-item").attr("seasontitle");
-      let poster = link.find("season-list-item").attr("posterurl");
-      // const checkDb = await tvseasons.getByParams({season_name: result.name})
-      // if(checkDb[0])
-      // {
-      //   console.log('Already')
-      // }
-      // else
-      // {
-        let season = await getTvseasons(
-          `https://www.rottentomatoes.com${link.attr("href")}`,
-          seasonName,
-          poster,
-          result.name)
-        seasonList.push (season)
-      // }
-
-
-    }
-
-    createProduct('TV',info,null,null,null,null, seasonList )
-
-    // console.log({
-
-    //   ...result,
-    //   images
-    // });
-
-    // seasonList.push(link.attr('href'))
+    await createProduct("TV", info, null, photos, crew, seasonList,null);
+    // await createProduct('TV',info,null,photos)
   }
-
-  // tvseries
-  //   .insert({
-  //     images,
-  //     ...result,
-  //   })
-  //   .then(async () => {
-  //     console.log(`add ${result.name}`);})
 };
 
 const getTvseasons = async (link, name, poster, showName) => {
@@ -181,11 +171,6 @@ const getTvseasons = async (link, name, poster, showName) => {
     const searchResults = selector("body").find(
       "div[class='body_main container'] > div[id='main_container'] > article > div "
     );
-
-
-    
-    // let product_id = await createProduct("tv", season_id, whatToKnow, images, crew);
-
 
     const score = searchResults
       .find(
@@ -245,30 +230,26 @@ const getTvseasons = async (link, name, poster, showName) => {
     );
 
     const whatToKnow = searchResults
-    .find("div[class='tv-series__series-info'] > div[class='tv-series__series-info-content'] > #movieSynopsis").text().trim()
+      .find(
+        "div[class='tv-series__series-info'] > div[class='tv-series__series-info-content'] > #movieSynopsis"
+      )
+      .text()
+      .trim();
 
-
-    // const seasonList = await tvseasons.insert({season_name: name, series: id, summary, starting})
-
-
-    const episodes = []
+    const episodes = [];
     const episodeList = searchResults.find(
       "#mainColumn > .episode-list-wrap > #desktopEpisodeList > div[class='panel-body content_body'] > #episode-list-root > .episodes > .bottom_divider"
     );
     for (let episode of episodeList) {
       let item = selector(episode).find("div > div > div > a");
-      //console.log(item.attr("href"))
-
-      let episodeInfo = await getEpisodes(
-        `https://www.rottentomatoes.com${item.attr("href")}`,
-        name
+      let episodeInfo = episodes.push(
+        await getEpisodes(
+          `https://www.rottentomatoes.com${item.attr("href")}`,
+          name
+        )
       );
 
-    episodes.push(episodeInfo)
-
-    return  {season_name: name, summary, starting, episodes}
-      
-
+      return { season_name: name, summary, starting, episodes };
     }
   }
 };
@@ -281,7 +262,7 @@ const getEpisodes = async (link, sname) => {
       "div[class='body_main container'] > div[id='main_container'] > #main_container >div[id='mainColumn'] "
     );
 
-    // const postId = await getReviewTV(`${link}\reviews`);
+    const postId = await getReviewTV(`${link}/reviews`);
 
     const name = searchResults
       .find(
@@ -334,13 +315,13 @@ const getEpisodes = async (link, sname) => {
     //   summary,
     // });
 
-    return({
+    return {
       name,
       // name,
       airDate,
       summary,
-    });
-
+      postId,
+    };
   }
 };
 
