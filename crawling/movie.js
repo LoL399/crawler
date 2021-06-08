@@ -168,7 +168,7 @@ const rottenTomatoGet = async (link) => {
         //   id = checkDb[0].id
         // }
 
-        crew.push({ personName, characterName: castName });
+        crew.push(JSON.stringify({ personName, characterName: castName }));
         // if (actorName !== "") {
         // createProduct(name, actorName, actorRole);
         // }
@@ -199,10 +199,10 @@ const createProduct = async (
   let product = {
     type,
     info: JSON.stringify(info),
-    crew: JSON.stringify(crew),
+    crew: crew,
     whatToKnow: JSON.stringify(whatToKnow),
     photos: images,
-    seasons: JSON.stringify(seasons),
+    seasons: seasons,
     postId,
   };
 

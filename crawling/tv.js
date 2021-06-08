@@ -86,7 +86,7 @@ const getTvseries = async (link) => {
           .trim();
         
         
-          crew.push({ personName, characterName: castName });
+          crew.push(JSON.stringify({ personName, characterName: castName }));
 
 
         // const checkDb = await persons.getByParams({ name: personName });
@@ -249,7 +249,7 @@ const getTvseasons = async (link, name, poster, showName) => {
         )
       );
 
-      return { season_name: name, summary, starting, episodes };
+      return JSON.stringify({ season_name: name, summary, starting, episodes });
     }
   }
 };
